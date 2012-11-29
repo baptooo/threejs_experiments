@@ -20,28 +20,6 @@
     <body style="overflow: hidden;">
         <script type="text/javascript" src="src/three.min.js"></script>
         <script type="text/javascript">
-            (function(raf, caf) {
-                Date.now = Date.now || function() {
-                    return new Date().getTime();
-                };
-                var vendors = ['', 'webkit', 'moz', 'o', 'msie'];
-                window.requestAnimationFrame = function(callback) {
-                    return setTimeout(callback, 16);
-                };
-                window.cancelAnimationFrame = function(id) {
-                    return clearTimeout(id);
-                };
-                for(var i in vendors) {
-                    if(window[vendors[i]+raf] && window[vendors[i]+caf]) {
-                        window.requestAnimationFrame = window[vendors[i]+raf];
-                        window.cancelAnimationFrame = window[vendors[i]+caf];
-                        break;
-                    }
-                };
-            })('RequestAnimationFrame', 'CancelAnimationFrame');
-            
-            var elapsed = 0;
-            var mouse = {x:0,y:0};
             window.onmousewheel = function(e) {
                 var delta = e.wheelDelta;
                 var value = delta / Math.abs(delta) * 10;
@@ -49,21 +27,31 @@
                 three.camera.position.y += value;
                 three.camera.position.z -= value;
             };
+            var sW = window.innerWidth,
+            	sH = window.innerHeight,
+            	elapsed = 0,
+            	axes = {
+	            	x: [-sW / 2 + 100 << 0, sW / 2 - 100 << 0],
+	            	y: [-sH / 2 + 100 << 0, sH / 2 - 100 << 0],
+	            	z: [-300, 300]
+	            };
             var animate = function(lastTime, three) {
                 var now = Date.now();
                 var diff = now - lastTime;
                 elapsed += diff;
                 
-                for(var i in three.cubes) {
-                    var cube = three.cubes[i];
-                    var el = elapsed - 250 * i;
-                    
-                    var x = Math.cos(el / 4000 * Math.PI * 2) * 150 << 0;
-                    var r = Math.sin(el / 2000 * Math.PI);
-                    
-                    cube.rotation.z = -r * 0.5;
-                    cube.rotation.y = r * 0.2;
-                    cube.position.x = x;
+                var cube = three.cube;
+                
+                for(var i in axes) {
+                	var axe = axes[i],
+                		pos = cube.position[i],
+                		speed = cube._speed[i];
+                	
+                	if(pos < axe[0] || pos > axe[1]) {
+                		cube._speed[i] = -speed;
+                	}
+                	cube.position[i] += cube._speed[i];
+                	cube.rotation[i] -= cube._speed[i] * Math.PI * 0.001;
                 }
                 
                 lastTime = now;
@@ -81,45 +69,45 @@
                 document.body.appendChild(renderer.domElement);
          
                 var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 5000);
-                camera.position.y = -280;
+                camera.position.y = -450;
                 camera.position.z = 400;
                 camera.rotation.x = 45 * (Math.PI / 180);
          
                 var scene = new THREE.Scene();
                 
-                var cubes = [], len = 15;
-                for(var i = 0; i < len; i++) {
-                    var cube = buildCube(i, len);
-                    cubes.push(cube);
-                    scene.add(cube);
-                }
+                var cube = buildCube();
+                cube._speed = {
+                	x: (Math.random() * 2 << 0) + 1,
+	                y: (Math.random() * 2 << 0) + 1,
+	                z: (Math.random() * 2 << 0) + 1
+                };
+                scene.add(cube);
                 
                 var three = {
                     renderer: renderer,
                     camera: camera,
                     scene: scene,
-                    cubes: cubes,
-                    len: len
+                    cube: cube
                 };
                 window.three = three;
                 
                 animate(0, three);
             }
             
-            function buildCube(idx, len) {
-                var materials = [];
+            function buildCube() {
+                var materials = [],
+                	size = 100;
+                	
                 for(var i = 0; i < 6; i++) {
                     var c = Math.random() * 0xFFFFFF << 0;
                     materials.push(new THREE.MeshBasicMaterial({
                         color: c
                     }));
                 }
-                var d = 100;
-                var size = d - d / (len - idx / len);
                 var cube = new THREE.Mesh(new THREE.CubeGeometry(size, size, size, 1, 1, 1), new THREE.MeshFaceMaterial(materials));
                 cube.overdraw = true;
-                cube.position.y = d * idx;
-                return cube
+                
+                return cube;
             }
         </script>
     </body>
