@@ -77,8 +77,8 @@
             };
             
             window.onload = function() {
-                var ios = navigator.userAgent.match(/(iphone|ipad)/i);
-                var renderClass = ios ? 'CanvasRenderer' : 'WebGLRenderer';
+                var supportsWebgl = navigator.userAgent.match(/(iphone|ipad|opera)/i);
+                var renderClass = supportsWebgl ? 'CanvasRenderer' : 'WebGLRenderer';
                 
                 var renderer = new THREE[renderClass]();
                 renderer.setSize(window.innerWidth, window.innerHeight);
