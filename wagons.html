@@ -20,35 +20,33 @@
     <body style="overflow: hidden;">
         <script type="text/javascript" src="src/three.min.js"></script>
         <script type="text/javascript">
-            (function(raf, caf) {
-                Date.now = Date.now || function() {
-                    return new Date().getTime();
-                };
-                var vendors = ['', 'webkit', 'moz', 'o', 'msie'];
-                window.requestAnimationFrame = function(callback) {
-                    return setTimeout(callback, 16);
-                };
-                window.cancelAnimationFrame = function(id) {
-                    return clearTimeout(id);
-                };
-                for(var i in vendors) {
-                    if(window[vendors[i]+raf] && window[vendors[i]+caf]) {
-                        window.requestAnimationFrame = window[vendors[i]+raf];
-                        window.cancelAnimationFrame = window[vendors[i]+caf];
-                        break;
-                    }
-                };
-            })('RequestAnimationFrame', 'CancelAnimationFrame');
+            (function() {
+            	// Camera controls
+            	var mouse = {x:0,y:0};
+            	var dragStarted = false;
+	            window.onmousewheel = function(e) {
+	                var delta = e.wheelDelta;
+	                var value = delta / Math.abs(delta) * 10;
+	                
+	                three.camera.position.y += value;
+	                three.camera.position.z -= value;
+	            };
+	            window.onmousedown = function(e) {
+	            	dragStarted = true;
+	            }
+	            window.onmousemove = function(e) {
+	            	if(!dragStarted) {
+	            		return true;
+	            	}
+	            	// TODO: camera rotation
+	            }
+	            window.onmouseup = function(e) {
+	            	dragStarted = false;
+	            }
+	            window.Mouse = mouse;
+            })();
             
             var elapsed = 0;
-            var mouse = {x:0,y:0};
-            window.onmousewheel = function(e) {
-                var delta = e.wheelDelta;
-                var value = delta / Math.abs(delta) * 10;
-                
-                three.camera.position.y += value;
-                three.camera.position.z -= value;
-            };
             var animate = function(lastTime, three) {
                 var now = Date.now();
                 var diff = now - lastTime;
@@ -116,7 +114,7 @@
                 }
                 var d = 100;
                 var size = d - d / (len - idx / len);
-                var cube = new THREE.Mesh(new THREE.CubeGeometry(size, size, size, 1, 1, 1), new THREE.MeshFaceMaterial(materials));
+                var cube = new THREE.Mesh(new THREE.CubeGeometry(size, size, size, 10, 10, 1), new THREE.MeshFaceMaterial(materials));
                 cube.overdraw = true;
                 cube.position.y = d * idx;
                 return cube
