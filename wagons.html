@@ -15,6 +15,9 @@
         <!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
         <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <style type="text/css">
+            * { margin:0; padding:0; }
+        </style>
     </head>
 
     <body style="overflow: hidden;">
@@ -74,7 +77,10 @@
             };
             
             window.onload = function() {
-                var renderer = new THREE.WebGLRenderer();
+                var ios = navigator.userAgent.match(/(iphone|ipad)/i);
+                var renderClass = ios ? 'CanvasRenderer' : 'WebGLRenderer';
+                
+                var renderer = new THREE[renderClass]();
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 document.body.appendChild(renderer.domElement);
          
