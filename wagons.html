@@ -23,31 +23,42 @@
     <body style="overflow: hidden;">
         <script type="text/javascript" src="src/three.min.js"></script>
         <script type="text/javascript">
-            (function() {
-            	// Camera controls
-            	var mouse = {x:0,y:0};
-            	var dragStarted = false;
-	            window.onmousewheel = function(e) {
-	                var delta = e.wheelDelta;
-	                var value = delta / Math.abs(delta) * 10;
-	                
-	                three.camera.position.y += value;
-	                three.camera.position.z -= value;
-	            };
-	            window.onmousedown = function(e) {
-	            	dragStarted = true;
-	            }
-	            window.onmousemove = function(e) {
-	            	if(!dragStarted) {
-	            		return true;
-	            	}
-	            	// TODO: camera rotation
-	            }
-	            window.onmouseup = function(e) {
-	            	dragStarted = false;
-	            }
-	            window.Mouse = mouse;
-            })();
+        	// Camera controls
+        	var mouse = {x:0,y:0};
+        	var dragStarted = false;
+        	var zoomDelta = 0;
+        	var lastPoint = {x:0,y:0};
+        	var moved = {x:0,y:0};
+        	var offsetY = -280;
+            window.onmousewheel = function(e) {
+                var delta = e.wheelDelta;
+                zoomDelta = delta / Math.abs(delta) * 50;
+            };
+            window.onmousedown = function(e) {
+            	lastPoint = {
+            		x: e.pageX,
+            		y: e.pageY
+            	};
+            	dragStarted = true;
+            	zoomDelta = 0;
+            }
+            window.onmousemove = function(e) {
+            	if(!dragStarted) {
+            		return true;
+            	}
+            	moved.x += e.pageX - lastPoint.x;
+            	moved.y += e.pageY - lastPoint.y;
+            	lastPoint = {
+            		x: e.pageX,
+            		y: e.pageY
+            	};
+            	
+            	three.camera.position.x = -moved.x;
+            	three.camera.position.y = offsetY + moved.y;
+            }
+            window.onmouseup = function(e) {
+            	dragStarted = false;
+            }
             
             var elapsed = 0;
             var animate = function(lastTime, three) {
@@ -67,6 +78,12 @@
                     cube.position.x = x;
                 }
                 
+                if(zoomDelta) {
+                	zoomDelta -= zoomDelta > 0 ? 1 : -1;
+                	three.camera.position.y += zoomDelta * 0.1;
+                	three.camera.position.z -= zoomDelta * 0.1;
+                	offsetY = three.camera.position.y;
+                }
                 lastTime = now;
                 
                 three.renderer.render(three.scene, three.camera);
