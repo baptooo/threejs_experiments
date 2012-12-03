@@ -57,15 +57,16 @@
             	dragStarted = false;
             }
             var direction = 0,
-            	rotation = -890,
+            	rotation = 0,
             	speed = 0,
             	speedLimit = 10,
             	forward = false,
             	elapsed = 0,
-            	acceleration = 0.2,
+            	acceleration = 0.15,
             	rotationVelocity = 3,
             	handbrakeVelocity = 1,
-            	oldForward = 0;
+            	oldForward = 0,
+            	curvingSpeed = 0;
             	
             window.onkeydown = function(e) {
             	if({37:-1,39:1}[e.which]) {
@@ -105,21 +106,32 @@
 					speed -= (speed > 0) ? acceleration : -acceleration;
 					if(speed > 0 && speed < acceleration) speed = 0;
 				}
-				rotation += direction * speed * rotationVelocity;
+				
+				if(direction && forward) {
+                    curvingSpeed = Math.min(Math.PI / 16, Math.max(-Math.PI / 16, curvingSpeed + direction * 0.01));
+                } else if(curvingSpeed) {
+                    curvingSpeed -= (curvingSpeed > 0) ? 0.01 : -0.01;
+                    if(curvingSpeed > 0 && curvingSpeed < 0.01) curvingSpeed = 0;
+                }
+				
+				rotation += rotationVelocity * (direction && forward ? curvingSpeed * 5 : direction) * speed;
 				
 				var angle = rotation / (Math.PI * 180) + Math.PI / 2;
 				var carAngle = (rotation * handbrakeVelocity) / (Math.PI * 180) + Math.PI / 2;
 				var posX = Math.cos(angle) * speed;
 				var posY = Math.sin(angle) * speed;
 				
-				car.rotation.z = carAngle;
 				
-				//body.rotation.y = posX * 0.1;
-				body.rotation.x = direction * 0.2;
+				car.rotation.y = carAngle;
+				body.rotation.x = curvingSpeed * 0.5;
+				//car.rotation.z = speed * 0.01;
 				
 				car.position.x += posX;
 				car.position.y += posY;
-                
+				
+				three.camera.position.x += posX;
+				three.camera.position.y += posY;
+				
                 if(zoomDelta) {
                 	zoomDelta -= zoomDelta > 0 ? 1 : -1;
                 	three.camera.position.y += zoomDelta * 0.1;
@@ -150,36 +162,103 @@
          
                 var scene = new THREE.Scene();
                 
-                var body = buildCube();
-                var car = new THREE.Mesh(new THREE.Geometry());
-                car.add(body);
+                var ambient = new THREE.AmbientLight( 0x020202 );
+                scene.add( ambient );
+
+                var directionalLight = new THREE.DirectionalLight( 0xffffff );
+                directionalLight.position.set( 1, 1, 0.5 ).normalize();
+                scene.add( directionalLight );
+
+                var pointLight = new THREE.PointLight( 0xffffff );
+                pointLight.position.set( 0, -150, 0 );
+                scene.add( pointLight );
+
+                var sphere = new THREE.SphereGeometry( 100, 16, 8 );
+                lightMesh = new THREE.Mesh( sphere, new THREE.MeshBasicMaterial( { color: 0xffaa00 } ) );
+                lightMesh.scale.set( 0.05, 0.05, 0.05 );
+                lightMesh.position = pointLight.position;
+                scene.add( lightMesh );
                 
-                scene.add(car);
+                buildCar();
                 
                 var three = {
                     renderer: renderer,
                     camera: camera,
-                    scene: scene,
-                    car: car,
-                    body: body
+                    scene: scene
                 };
                 window.three = three;
-                
-                animate(0, three);
             }
             
-            function buildCube(idx, len) {
-                var materials = [];
-                for(var i = 0; i < 6; i++) {
-                    var c = Math.random() * 0xFFFFFF << 0;
-                    materials.push(new THREE.MeshBasicMaterial({
-                        color: c
-                    }));
+            function buildCar() {
+                var base = "elements/";
+                var r = base + "textures/cube/skybox/";
+                var urls = [ r + "px.jpg", r + "nx.jpg",
+                             r + "py.jpg", r + "ny.jpg",
+                             r + "pz.jpg", r + "nz.jpg" ];
+
+                var textureCube = THREE.ImageUtils.loadTextureCube( urls );
+
+                var camaroMaterials = {
+
+                    body: [],
+                    chrome: new THREE.MeshLambertMaterial( { color: 0xffffff, envMap: textureCube } ),
+                    darkchrome: new THREE.MeshLambertMaterial( { color: 0x444444, envMap: textureCube } ),
+                    glass: new THREE.MeshBasicMaterial( { color: 0x223344, envMap: textureCube, opacity: 0.25, combine: THREE.MixOperation, reflectivity: 0.25, transparent: true } ),
+                    tire: new THREE.MeshLambertMaterial( { color: 0x050505 } ),
+                    interior: new THREE.MeshPhongMaterial( { color: 0x050505, shininess: 20 } ),
+                    black: new THREE.MeshLambertMaterial( { color: 0x000000 } )
+
                 }
-                var size = 50;
-                var cube = new THREE.Mesh(new THREE.CubeGeometry(size * 1.5, size, size / 2, 10, 10, 1), new THREE.MeshFaceMaterial(materials));
-                cube.overdraw = true;
-                return cube
+
+                camaroMaterials.body.push( [ "Orange", new THREE.MeshLambertMaterial( { color: 0xff6600, envMap: textureCube, combine: THREE.MixOperation, reflectivity: 0.3 } ) ] );
+                camaroMaterials.body.push( [ "Blue", new THREE.MeshLambertMaterial( { color: 0x226699, envMap: textureCube, combine: THREE.MixOperation, reflectivity: 0.3 } ) ] );
+                camaroMaterials.body.push( [ "Red", new THREE.MeshLambertMaterial( { color: 0x660000, envMap: textureCube, combine: THREE.MixOperation, reflectivity: 0.5 } ) ] );
+                camaroMaterials.body.push( [ "Black", new THREE.MeshLambertMaterial( { color: 0x000000, envMap: textureCube, combine: THREE.MixOperation, reflectivity: 0.5 } ) ] );
+                camaroMaterials.body.push( [ "White", new THREE.MeshLambertMaterial( { color: 0xffffff, envMap: textureCube, combine: THREE.MixOperation, reflectivity: 0.5 } ) ] );
+
+                camaroMaterials.body.push( [ "Carmine", new THREE.MeshPhongMaterial( { color: 0x770000, specular:0xffaaaa, envMap: textureCube, combine: THREE.MultiplyOperation } ) ] );
+                camaroMaterials.body.push( [ "Gold", new THREE.MeshPhongMaterial( { color: 0xaa9944, specular:0xbbaa99, shininess:50, envMap: textureCube, combine: THREE.MultiplyOperation } ) ] );
+                camaroMaterials.body.push( [ "Bronze", new THREE.MeshPhongMaterial( { color: 0x150505, specular:0xee6600, shininess:10, envMap: textureCube, combine: THREE.MixOperation, reflectivity: 0.5 } ) ] );
+                camaroMaterials.body.push( [ "Chrome", new THREE.MeshPhongMaterial( { color: 0xffffff, specular:0xffffff, envMap: textureCube, combine: THREE.MultiplyOperation } ) ] );
+
+                var loader = new THREE.BinaryLoader();
+                loader.load( base + "obj/camaro/CamaroNoUv_bin.js", function( geometry ) { createScene( geometry, camaroMaterials ) } );
+            }
+            
+            function createScene( geometry, materials ) {
+                var scene = window.three.scene,
+                    s = 10,
+                    m = new THREE.MeshFaceMaterial();
+
+                m.materials[ 0 ] = materials.body[ 4 ][ 1 ]; // car body
+                m.materials[ 1 ] = materials.chrome; // wheels chrome
+                m.materials[ 2 ] = materials.chrome; // grille chrome
+                m.materials[ 3 ] = materials.darkchrome; // door lines
+                m.materials[ 4 ] = materials.glass; // windshield
+                m.materials[ 5 ] = materials.interior; // interior
+                m.materials[ 6 ] = materials.tire; // tire
+                m.materials[ 7 ] = materials.black; // tireling
+                m.materials[ 8 ] = materials.black; // behind grille
+                
+                var mesh = new THREE.Mesh( geometry, m );
+                mesh.overdraw = true;
+                mesh.rotation.y = Math.PI / 2;
+                mesh.scale.set( s, s, s );
+                
+                console.log(mesh);
+                
+                var car = new THREE.Mesh(new THREE.Geometry());
+                car.rotation.y = Math.PI / 2;
+                car.rotation.x = Math.PI / 2;
+                car.add(mesh);
+                
+                scene.add( car );
+                
+                window.three.car = car;
+                window.three.body = mesh;
+                
+                //window.three.renderer.render(window.three.scene, window.three.camera);
+                animate(0, window.three);
             }
         </script>
     </body>
