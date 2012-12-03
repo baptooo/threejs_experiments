@@ -30,10 +30,11 @@
         	var lastPoint = {x:0,y:0};
         	var moved = {x:0,y:0};
         	var offsetY = -280;
-            window.onmousewheel = function(e) {
-                var delta = e.wheelDelta;
+        	var scroll = navigator.userAgent.match(/firefox/i) ? 'DOMMouseScroll' : 'mousewheel';
+            document.addEventListener(scroll, function(e) {
+                var delta = e.wheelDelta || -e.detail;
                 zoomDelta = delta / Math.abs(delta) * 50;
-            };
+            });
             window.onmousedown = function(e) {
             	lastPoint = {
             		x: e.pageX,
@@ -59,7 +60,7 @@
             var direction = 0,
             	rotation = 0,
             	speed = 0,
-            	speedLimit = 10,
+            	speedLimit = 20,
             	forward = false,
             	elapsed = 0,
             	acceleration = 0.15,
@@ -114,7 +115,8 @@
                     if(curvingSpeed > 0 && curvingSpeed < 0.01) curvingSpeed = 0;
                 }
 				
-				rotation += rotationVelocity * (direction && forward ? curvingSpeed * 5 : direction) * speed;
+				//rotation += rotationVelocity * (direction && forward ? curvingSpeed * 5 : direction) * speed;
+				rotation += rotationVelocity * speed * direction * 0.5;
 				
 				var angle = rotation / (Math.PI * 180) + Math.PI / 2;
 				var carAngle = (rotation * handbrakeVelocity) / (Math.PI * 180) + Math.PI / 2;
@@ -129,8 +131,8 @@
 				car.position.x += posX;
 				car.position.y += posY;
 				
-				three.camera.position.x += posX;
-				three.camera.position.y += posY;
+				//three.camera.position.x += posX;
+				//three.camera.position.y += posY;
 				
                 if(zoomDelta) {
                 	zoomDelta -= zoomDelta > 0 ? 1 : -1;
@@ -220,9 +222,102 @@
                 camaroMaterials.body.push( [ "Gold", new THREE.MeshPhongMaterial( { color: 0xaa9944, specular:0xbbaa99, shininess:50, envMap: textureCube, combine: THREE.MultiplyOperation } ) ] );
                 camaroMaterials.body.push( [ "Bronze", new THREE.MeshPhongMaterial( { color: 0x150505, specular:0xee6600, shininess:10, envMap: textureCube, combine: THREE.MixOperation, reflectivity: 0.5 } ) ] );
                 camaroMaterials.body.push( [ "Chrome", new THREE.MeshPhongMaterial( { color: 0xffffff, specular:0xffffff, envMap: textureCube, combine: THREE.MultiplyOperation } ) ] );
+                
+                var mlib = {
+					"Orange": 	new THREE.MeshLambertMaterial( { color: 0xff6600, ambient: 0xff2200, envMap: textureCube, combine: THREE.MixOperation, reflectivity: 0.3 } ),
+					"Blue": 	new THREE.MeshLambertMaterial( { color: 0x001133, ambient: 0x001133, envMap: textureCube, combine: THREE.MixOperation, reflectivity: 0.3 } ),
+					"Red": 		new THREE.MeshLambertMaterial( { color: 0x660000, ambient: 0x330000, envMap: textureCube, combine: THREE.MixOperation, reflectivity: 0.25 } ),
+					"Black": 	new THREE.MeshLambertMaterial( { color: 0x000000, ambient: 0x000000, envMap: textureCube, combine: THREE.MixOperation, reflectivity: 0.15 } ),
+					"White":	new THREE.MeshLambertMaterial( { color: 0xffffff, ambient: 0x666666, envMap: textureCube, combine: THREE.MixOperation, reflectivity: 0.25 } ),
+	
+					"Carmine": 	new THREE.MeshPhongMaterial( { color: 0x770000, specular:0xffaaaa, envMap: textureCube, combine: THREE.MultiplyOperation } ),
+					"Gold": 	new THREE.MeshPhongMaterial( { color: 0xaa9944, specular:0xbbaa99, shininess:50, envMap: textureCube, combine: THREE.MultiplyOperation } ),
+					"Bronze":	new THREE.MeshPhongMaterial( { color: 0x150505, specular:0xee6600, shininess:10, envMap: textureCube, combine: THREE.MixOperation, reflectivity: 0.25 } ),
+					"Chrome": 	new THREE.MeshPhongMaterial( { color: 0xffffff, specular:0xffffff, envMap: textureCube, combine: THREE.Multiply } ),
+	
+					"Orange metal": new THREE.MeshLambertMaterial( { color: 0xff6600, ambient: 0xff2200, envMap: textureCube, combine: THREE.MultiplyOperation } ),
+					"Blue metal": 	new THREE.MeshLambertMaterial( { color: 0x001133, ambient: 0x002266, envMap: textureCube, combine: THREE.MultiplyOperation } ),
+					"Red metal": 	new THREE.MeshLambertMaterial( { color: 0x770000, envMap: textureCube, combine: THREE.MultiplyOperation } ),
+					"Green metal": 	new THREE.MeshLambertMaterial( { color: 0x007711, envMap: textureCube, combine: THREE.MultiplyOperation } ),
+					"Black metal":	new THREE.MeshLambertMaterial( { color: 0x222222, envMap: textureCube, combine: THREE.MultiplyOperation } ),
+	
+					"Pure chrome": 	new THREE.MeshLambertMaterial( { color: 0xffffff, envMap: textureCube } ),
+					"Dark chrome":	new THREE.MeshLambertMaterial( { color: 0x444444, envMap: textureCube } ),
+					"Darker chrome":new THREE.MeshLambertMaterial( { color: 0x222222, envMap: textureCube } ),
+	
+					"Black glass": 	new THREE.MeshLambertMaterial( { color: 0x101016, envMap: textureCube, opacity: 0.975, transparent: true } ),
+					"Dark glass":	new THREE.MeshLambertMaterial( { color: 0x101046, envMap: textureCube, opacity: 0.25, transparent: true } ),
+					"Blue glass":	new THREE.MeshLambertMaterial( { color: 0x668899, envMap: textureCube, opacity: 0.75, transparent: true } ),
+					"Light glass":	new THREE.MeshBasicMaterial( { color: 0x223344, envMap: textureCube, opacity: 0.25, transparent: true, combine: THREE.MixOperation, reflectivity: 0.25 } ),
+	
+					"Red glass":	new THREE.MeshLambertMaterial( { color: 0xff0000, opacity: 0.75, transparent: true } ),
+					"Yellow glass":	new THREE.MeshLambertMaterial( { color: 0xffffaa, opacity: 0.75, transparent: true } ),
+					"Orange glass":	new THREE.MeshLambertMaterial( { color: 0x995500, opacity: 0.75, transparent: true } ),
+	
+					"Orange glass 50":	new THREE.MeshLambertMaterial( { color: 0xffbb00, opacity: 0.5, transparent: true } ),
+					"Red glass 50": 	new THREE.MeshLambertMaterial( { color: 0xff0000, opacity: 0.5, transparent: true } ),
+	
+					"Fullblack rough":	new THREE.MeshLambertMaterial( { color: 0x000000 } ),
+					"Black rough":		new THREE.MeshLambertMaterial( { color: 0x050505 } ),
+					"Darkgray rough":	new THREE.MeshLambertMaterial( { color: 0x090909 } ),
+					"Red rough":		new THREE.MeshLambertMaterial( { color: 0x330500 } ),
+	
+					"Darkgray shiny":	new THREE.MeshPhongMaterial( { color: 0x000000, specular: 0x050505 } ),
+					"Gray shiny":		new THREE.MeshPhongMaterial( { color: 0x050505, shininess: 20 } )
+				}
+				
+				var CARS = {
+					"veyron": {
+						name:	"Bugatti Veyron",
+						url: 	"obj/veyron/VeyronNoUv_bin.js",
+						author: '<a href="http://artist-3d.com/free_3d_models/dnm/model_disp.php?uid=1129" target="_blank">Troyano</a>',
+						init_rotation: [ 0, 0, 0 ],
+						scale: 5.5,
+						init_material: 4,
+						body_materials: [ 2 ],
+	
+						object: null,
+						buttons: null,
+						materials: null
+					}
+				};
+				
+				CARS[ "veyron" ].materials = {
+
+					body: [
+
+						[ "Orange metal", 	mlib[ "Orange metal" ] ],
+						[ "Blue metal", 	mlib[ "Blue metal" ] ],
+						[ "Red metal", 		mlib[ "Red metal" ] ],
+						[ "Green metal",	mlib[ "Green metal" ] ],
+						[ "Black metal", 	mlib[ "Black metal" ] ],
+
+						[ "Gold", 		mlib[ "Gold" ] ],
+						[ "Bronze", 	mlib[ "Bronze" ] ],
+						[ "Chrome", 	mlib[ "Chrome" ] ]
+
+					],
+
+				}
+				
+				m = CARS[ "veyron" ].materials;
+				mi = CARS[ "veyron" ].init_material;
+
+				CARS[ "veyron" ].mmap = {
+
+					0: mlib[ "Black rough" ],		// tires + inside
+					1: mlib[ "Pure chrome" ],		// wheels + extras chrome
+					2: m.body[ mi ][ 1 ], 			// back / top / front torso
+					3: mlib[ "Dark glass" ],		// glass
+					4: mlib[ "Pure chrome" ],		// sides torso
+					5: mlib[ "Pure chrome" ],		// engine
+					6: mlib[ "Red glass 50" ],		// backlights
+					7: mlib[ "Orange glass 50" ]	// backsignals
+
+				}
 
                 var loader = new THREE.BinaryLoader();
-                loader.load( base + "obj/camaro/CamaroNoUv_bin.js", function( geometry ) { createScene( geometry, camaroMaterials ) } );
+                loader.load( base + "obj/veyron/VeyronNoUv_bin.js", function( geometry ) { createScene( geometry, camaroMaterials ) } );
             }
             
             function createScene( geometry, materials ) {
@@ -240,12 +335,11 @@
                 m.materials[ 7 ] = materials.black; // tireling
                 m.materials[ 8 ] = materials.black; // behind grille
                 
+                
                 var mesh = new THREE.Mesh( geometry, m );
                 mesh.overdraw = true;
                 mesh.rotation.y = Math.PI / 2;
-                mesh.scale.set( s, s, s );
-                
-                console.log(mesh);
+                //mesh.scale.set( s, s, s );
                 
                 var car = new THREE.Mesh(new THREE.Geometry());
                 car.rotation.y = Math.PI / 2;
