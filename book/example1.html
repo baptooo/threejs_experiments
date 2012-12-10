@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Book Base</title>
+	</head>
+	<body>
+		<div id="container"></div>
+		
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+		<script type="text/javascript" src="../src/three.min.js"></script>
+		<script type="text/javascript">
+			$(document).ready(function() {
+				var w = 800, h = 600;
+				$('#container').width(w).height(h).css('background', '#000');
+				
+				var renderer = new THREE.WebGLRenderer();
+				renderer.setSize(w, h);
+				$('#container').append(renderer.domElement);
+				
+				var scene = new THREE.Scene();
+				
+				var camera = new THREE.PerspectiveCamera(45, w / h, 1, 4000);
+				camera.position.set(0, 0, 3.3333);
+				scene.add(camera);
+				
+				var geometry = new THREE.PlaneGeometry(1, 1);
+				var mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
+				scene.add(mesh);
+				
+				//renderer.render(scene, camera);
+				
+				animate({
+					r: renderer,
+					m: mesh,
+					c: camera,
+					s: scene
+				});
+			});
+			
+			function animate(t) {
+				
+				t.m.rotation.z -= 0.01;
+				
+				t.r.render(t.s, t.c);
+				
+				window.requestAnimationFrame(function() {
+					animate(t);
+				});
+			}
+		</script>
+	</body>
+</html>

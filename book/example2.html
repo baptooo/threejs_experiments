@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Book Base</title>
+		<link rel="stylesheet" type="text/css" href="../book_gitignore/css/webglbook.css" />
+	</head>
+	<body>
+		<div id="container"></div>
+		
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+		<script type="text/javascript" src="../src/three.min.js"></script>
+		<script type="text/javascript">
+			$(document).ready(function() {
+				var root = '../book_gitignore/',
+					w = $(window).width() - 17, h = $(window).height() - 17,
+					renderer = null,
+					scene = null,
+					camera = null,
+					cube = null,
+					animating = false;
+				
+				$('#container').width(w).height(h);
+				
+				renderer = new THREE.WebGLRenderer( { antialias: true });
+				renderer.setSize(w, h);
+				$('#container').append(renderer.domElement);
+				
+				scene = new THREE.Scene();
+				
+				camera = new THREE.PerspectiveCamera(45, w / h, 1, 4000);
+				camera.position.set(0, 0, 3);
+				
+				var light = new THREE.DirectionalLight(0xffffff, 1.5);
+				light.position.set(0, 0, 1);
+				scene.add(light);
+				
+				var mapUrl = root + 'images/molumen_small_funny_angry_monster.jpg';
+				var map = new THREE.ImageUtils.loadTexture(mapUrl);
+				
+				var material = new THREE.MeshPhongMaterial({map: map});
+				
+				var geometry = new THREE.CubeGeometry(1, 1, 1);
+				
+				cube = new THREE.Mesh(geometry, material);
+				
+				cube.rotation.x = Math.PI / 5;
+				cube.rotation.y = Math.PI / 5;
+				
+				scene.add(cube);
+				
+				function animate() {
+					if(dragging) {
+						cube.rotation.y = moved / 250;
+					}
+					if(speed && !dragging) {
+						cube.rotation.y += speed / 250;
+						speed -= (speed < 0) ? -1 : 1;
+						moved += (speed < 0) ? -1 : 1;
+					}
+					renderer.render(scene, camera);
+					
+					window.requestAnimationFrame(animate);
+				}
+				
+				var dragging = false,
+					speed = 0,
+					lastX = 0,
+					moved = 0,
+					lastTime = Date.now();
+				$(document).on('mousedown', function(e) {
+					dragging = true;
+					speed = 0;
+					lastX = e.pageX;
+				});
+				$(document).on('mousemove', function(e) {
+					if(!dragging) {
+						return true;
+					}
+					if(Date.now() - lastTime > 250) {
+						speed = 0;
+					}
+					moved += speed += (e.pageX - lastX);
+					lastX = e.pageX;
+				});
+				$(document).on('mouseup', function() {
+					dragging = false;
+				});
+				
+				animate();
+			});
+		</script>
+	</body>
+</html>
