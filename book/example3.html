@@ -2,50 +2,87 @@
 <html>
 	<head>
 		<title>Book Base</title>
+		<style type="text/css">
+			* { margin:0; padding:0 }
+			#container {
+				position: absolute;
+				width:100%;
+				height:100%;
+				overflow:hidden;
+				background: black;
+			}
+		</style>
 	</head>
 	<body>
 		<div id="container"></div>
 		
-		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+		<script src="http://ajax.googleapis.com/ajax/libs/ext-core/3.1.0/ext-core.js"></script>
 		<script type="text/javascript" src="../src/three.min.js"></script>
+		<script type="text/javascript" src="../src/sim-ext.js"></script>
 		<script type="text/javascript">
-			$(document).ready(function() {
-				$('#container').css({
-					position: 'absolute',
-					width: '98%',
-					height: '98%',
-					background: 'black',
-					overflow: 'hidden',
-					outline: 'none'
+			Earth = Ext.extend(Sim.Object, {
+				speed: 0.001,
+				constructor: function() {
+					Earth.superclass.constructor.apply(this, arguments);
+					
+					var group = new THREE.Object3D();
+					this.setObject3D(group);
+					
+					var surfaceMap = THREE.ImageUtils.loadTexture( "../book_gitignore/images/earth_surface_2048.jpg" );
+					var normalMap = THREE.ImageUtils.loadTexture( "../book_gitignore/images/earth_normal_2048.jpg" );
+					var specularMap = THREE.ImageUtils.loadTexture( "../book_gitignore/images/earth_specular_2048.jpg" );
+					
+					var shader = THREE.ShaderUtils.lib[ "normal" ],
+					uniforms = THREE.UniformsUtils.clone( shader.uniforms );
+					
+					uniforms[ "tNormal" ].texture = normalMap;
+					uniforms[ "tDiffuse" ].texture = surfaceMap;
+					uniforms[ "tSpecular" ].texture = specularMap;
+				
+					uniforms[ "enableDiffuse" ].value = true;
+					uniforms[ "enableSpecular" ].value = true;
+				
+					var shaderMaterial = new THREE.ShaderMaterial({
+						fragmentShader: shader.fragmentShader,
+						vertexShader: shader.vertexShader,
+						uniforms: uniforms,
+						lights: true
+					});
+				
+				    var globeGeometry = new THREE.SphereGeometry(1, 32, 32);
+				
+				    // We'll need these tangents for our shader
+				    globeGeometry.computeTangents();
+				    var globeMesh = new THREE.Mesh( globeGeometry, shaderMaterial );
+				    
+				    // Add it to our group
+				    this.object3D.add(globeMesh);
+				},
+				
+				update: function() {
+					Earth.superclass.update.apply(this, arguments);
+					
+					this.object3D.rotation.y += this.speed;
+				}
+			});
+			EarthApp = Ext.extend(Sim.App, {
+				constructor: function() {
+					EarthApp.superclass.constructor.apply(this, arguments);
+					
+					var earth = new Earth();
+					var light = new THREE.DirectionalLight(0xffffff, 1.5);
+					light.position.set(-1, 0, 1);
+					
+					this.addObject(earth);
+					this.scene.add(light);
+				}
+			});
+			
+			Ext.onReady(function() {
+				var app = new EarthApp({
+					container: Ext.get('container').dom
 				});
-				
-				var w = $('#container').width(), h = $('#container').height();
-				
-				var renderer = new THREE.WebGLRenderer();
-				renderer.setSize(w, h);
-				$('#container').append(renderer.domElement);
-				
-				var scene = new THREE.Scene();
-				
-				var camera = new THREE.PerspectiveCamera(45, w / h, 1, 4000);
-				camera.position.set( 0, 0, 3.3333 );
-				scene.add(camera);
-				
-				var earthmap = "../book_gitignore/images/earth_surface_2048.jpg";
-			    var geometry = new THREE.SphereGeometry(1, 32, 32);
-			    var texture = THREE.ImageUtils.loadTexture(earthmap);
-			    var material = new THREE.MeshBasicMaterial( { map: texture } );
-			    var mesh = new THREE.Mesh( geometry, material );
-			    
-			    scene.add(mesh);
-			    
-			    var animate = function() {
-			    	mesh.rotation.y += 0.01;
-			    	renderer.render(scene, camera);
-			    	window.requestAnimationFrame(animate);
-			    }
-			    
-			    animate();
+				app.run();
 			});
 		</script>
 	</body>
