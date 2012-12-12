@@ -17,9 +17,10 @@
 		<div id="container"></div>
 		
 		<script src="http://ajax.googleapis.com/ajax/libs/ext-core/3.1.0/ext-core.js"></script>
-		<script type="text/javascript" src="../src/three.min.js"></script>
+		<script type="text/javascript" src="../book_gitignore/libs/Three.js"></script>
 		<script type="text/javascript" src="../src/sim-ext.js"></script>
 		<script type="text/javascript">
+		    window.requestAnimationFrame = window.webkitRequestAnimationFrame;
 			Earth = Ext.extend(Sim.Object, {
 				speed: 0.001,
 				constructor: function() {
@@ -62,7 +63,7 @@
 				update: function() {
 					Earth.superclass.update.apply(this, arguments);
 					
-					this.object3D.rotation.y += this.speed;
+					this.object3D.rotation.y -= this.speed * 5;
 				}
 			});
 			EarthApp = Ext.extend(Sim.App, {

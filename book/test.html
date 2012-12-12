@@ -52,8 +52,8 @@
 				update: function() {
 					Earth.superclass.update.apply(this, arguments);
 					
-					this.object3D.rotation.y -= this.speed * 2;
-					this.earthObject.rotation.y -= this.speed * 30;
+					this.object3D.rotation.y -= this.speed;
+					this.earthObject.rotation.y -= this.speed * 10;
 				}
 			});
 			EarthApp = Ext.extend(Sim.App, {
@@ -66,6 +66,11 @@
 					
 					this.addObject(earth);
 					this.scene.add(light);
+					
+					window.onmousemove = function(e) {
+					    var posX = (e.pageX - window.innerWidth / 2) / window.innerWidth;
+					    light.position.x = posX * 10;
+					}
 				}
 			});
 			

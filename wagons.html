@@ -97,7 +97,7 @@
                 var supportsWebgl = navigator.userAgent.match(/(iphone|ipad|opera)/i);
                 var renderClass = supportsWebgl ? 'CanvasRenderer' : 'WebGLRenderer';
                 
-                var renderer = new THREE[renderClass]();
+                var renderer = new THREE[renderClass]({antialias: true});
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 document.body.appendChild(renderer.domElement);
          
@@ -137,7 +137,7 @@
                 }
                 var d = 100;
                 var size = d - d / (len - idx / len);
-                var cube = new THREE.Mesh(new THREE.CubeGeometry(size, size, size, 10, 10, 1), new THREE.MeshFaceMaterial(materials));
+                var cube = new THREE.Mesh(new THREE.CubeGeometry(size, size, size, 1, 1, 1), new THREE.MeshFaceMaterial(materials));
                 cube.overdraw = true;
                 cube.position.y = d * idx;
                 return cube
