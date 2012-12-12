@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Book Base</title>
+		<style type="text/css">
+			* { margin:0; padding:0 }
+			#container {
+				position: absolute;
+				width:100%;
+				height:100%;
+				overflow:hidden;
+				background: black;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="container"></div>
+		
+		<script src="http://ajax.googleapis.com/ajax/libs/ext-core/3.1.0/ext-core.js"></script>
+		<script type="text/javascript" src="../src/three.min.js"></script>
+		<script type="text/javascript" src="../src/sim-ext.js"></script>
+		<script type="text/javascript">
+			Earth = Ext.extend(Sim.Object, {
+				speed: 0.001,
+				constructor: function() {
+					Earth.superclass.constructor.apply(this, arguments);
+					
+					var me = this;
+					var surfaceMap = THREE.ImageUtils.loadTexture( "../book_gitignore/images/earth_surface_2048.jpg" );
+					var moonMap = THREE.ImageUtils.loadTexture( "../book_gitignore/images/moon_1024.jpg" );
+					
+					var group = new THREE.Object3D();
+					
+					var earthGeo = new THREE.SphereGeometry(1, 32, 32);
+					var earthMat = new THREE.MeshPhongMaterial({ map: surfaceMap });
+					var earthMesh = new THREE.Mesh(earthGeo, earthMat);
+					
+					var moonGeo = new THREE.SphereGeometry(0.2, 32, 32);
+					var moonMat = new THREE.MeshPhongMaterial({map: moonMap});
+					var moonMesh = new THREE.Mesh(moonGeo, moonMat);
+					
+					moonMesh.position.set(-1,1,0);
+					
+					me.earthObject = earthMesh;
+					
+					group.add(earthMesh);
+					group.add(moonMesh);
+					
+					me.setObject3D(group);
+				},
+				
+				update: function() {
+					Earth.superclass.update.apply(this, arguments);
+					
+					this.object3D.rotation.y -= this.speed * 2;
+					this.earthObject.rotation.y -= this.speed * 30;
+				}
+			});
+			EarthApp = Ext.extend(Sim.App, {
+				constructor: function() {
+					EarthApp.superclass.constructor.apply(this, arguments);
+					
+					var earth = new Earth();
+					var light = new THREE.DirectionalLight(0xffffff, 1.5);
+					light.position.set(-1, 0, 1);
+					
+					this.addObject(earth);
+					this.scene.add(light);
+				}
+			});
+			
+			Ext.onReady(function() {
+				var app = new EarthApp({
+					container: Ext.get('container').dom
+				});
+				app.run();
+			});
+		</script>
+	</body>
+</html>
