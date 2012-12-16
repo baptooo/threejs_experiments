@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Book Base</title>
+		<style type="text/css">
+			* { margin:0; padding:0 }
+			#container {
+				position: absolute;
+				width:100%;
+				height:100%;
+				overflow:hidden;
+				background: black;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="container"></div>
+		
+		<script src="http://ajax.googleapis.com/ajax/libs/ext-core/3.1.0/ext-core.js"></script>
+		<script type="text/javascript" src="../src/three.min.js"></script>
+		<script type="text/javascript" src="../src/sim-ext.js"></script>
+		<script type="text/javascript">
+		
+			Particle = Ext.extend(Sim.Object, {
+				constructor: function() {
+					Particle.superclass.constructor.apply(this, arguments);
+					
+					var me = this;
+					var nb = 250000;
+					var group = new THREE.Object3D();
+					
+					var starsGeometry = new THREE.Geometry();
+					var starsMaterials = [];
+					
+					var twopi = Math.PI * 2;
+					
+					for(var i = 0; i < nb; i++) {
+						var a = Math.random() * twopi;
+						
+						var x1 = Math.random() * 2 - 1;
+						var x2 = Math.random() * 2 - 1;
+						
+						var x = 2 * x1 * Math.sqrt(1 - Math.pow(x1, 2) - Math.pow(x2, 2)) + Math.random() * 0.1;
+						var y = 2 * x2 * Math.sqrt(1 - Math.pow(x1, 2) - Math.pow(x2, 2)) + Math.random() * 0.1;
+						var z = 1 - 2 * (Math.pow(x1, 2) + Math.pow(x2, 2)) + Math.random() * 0.1;
+						
+						var vector = new THREE.Vector3(
+							x,y,z
+						);
+						starsGeometry.vertices.push( vector );
+					}
+					
+					var material = new THREE.ParticleBasicMaterial({
+						color: 0xffffff,
+						size: i % 2 + 1,
+						sizeAttenuation: false
+					});
+					
+					var stars = new THREE.ParticleSystem(starsGeometry, material);
+					
+					group.add(stars);
+					
+					me.setObject3D(group);
+				},
+				
+				update: function() {
+					Particle.superclass.update.apply(this, arguments);
+					
+					this.object3D.rotation.x += 0.01;
+					this.object3D.rotation.y += 0.01;
+					this.object3D.rotation.z += 0.01;
+				}
+			});
+			
+			Particles = Ext.extend(Sim.App, {
+				constructor: function() {
+					Particles.superclass.constructor.apply(this, arguments);
+					
+					var particle = new Particle();
+					this.addObject(particle);
+				}
+			})
+			Ext.onReady(function() {
+				var particles = new Particles({
+					container: Ext.get('container').dom
+				});
+				particles.run();
+			});
+		</script>
+	</body>
+</html>

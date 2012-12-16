@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Book Base</title>
+		<style type="text/css">
+			* { margin:0; padding:0 }
+			#container {
+				position: absolute;
+				width:100%;
+				height:100%;
+				overflow:hidden;
+				background: black;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="container"></div>
+		
+		<script src="http://ajax.googleapis.com/ajax/libs/ext-core/3.1.0/ext-core.js"></script>
+		<script type="text/javascript" src="../src/three.min.js"></script>
+		<!--
+		<script type="text/javascript" src="../book_gitignore/libs/Three.js"></script>
+		<script type="text/javascript" src="../book_gitignore/libs/RequestAnimationFrame.js"></script>
+		-->
+		<script type="text/javascript" src="../src/sim-ext.js"></script>
+		<script type="text/javascript">
+			Earth = Ext.extend(Sim.Object, {
+				constructor: function() {
+					Earth.superclass.constructor.apply(this, arguments);
+					
+					var me = this;
+					
+					var group = new THREE.Object3D();
+					me.setObject3D(group);
+					
+					me.buildEarth();
+					me.buildClouds();
+				},
+				
+				buildEarth: function() {
+					var me = this;
+					var normalMap = THREE.ImageUtils.loadTexture('../book_gitignore/images/earth_normal_2048.jpg');
+					var surfaceMap = THREE.ImageUtils.loadTexture('../book_gitignore/images/earth_surface_2048.jpg');
+					var specularMap = THREE.ImageUtils.loadTexture('../book_gitignore/images/earth_specular_2048.jpg');
+					
+					var shader = THREE.ShaderUtils.lib[ "normal" ],
+					uniforms = THREE.UniformsUtils.clone( shader.uniforms );
+				
+					uniforms[ "tNormal" ].texture = normalMap;
+					uniforms[ "tDiffuse" ].texture = surfaceMap;
+					uniforms[ "tSpecular" ].texture = specularMap;
+				
+					uniforms[ "enableDiffuse" ].value = true;
+					uniforms[ "enableSpecular" ].value = true;
+				
+					var shaderMaterial = new THREE.ShaderMaterial({
+						fragmentShader: shader.fragmentShader,
+						vertexShader: shader.vertexShader,
+						uniforms: uniforms,
+						lights: true
+					});
+					
+					var geometry = new THREE.SphereGeometry(1, 32, 32);
+					geometry.computeTangents();
+					var mesh = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({ map: surfaceMap}));
+					
+					me.scale = 0.5;
+					mesh.scale.set(me.scale, me.scale, me.scale);
+					mesh.position.z = -10;
+					
+					me.earthObj = mesh;
+					
+					me.object3D.add(mesh);
+				},
+				
+				buildClouds: function() {
+					var me = this;
+					
+					var map = THREE.ImageUtils.loadTexture('../book_gitignore/images/earth_clouds_1024.png');
+					var geometry = new THREE.SphereGeometry(1.005, 32, 32);
+					var material = new THREE.MeshPhongMaterial({
+						map: map,
+						transparent: true,
+						opacity: 0.5
+					});
+					var mesh = new THREE.Mesh(geometry, material);
+					mesh.position.z = -10;
+					
+					me.cloudsObj = mesh;
+					
+					me.object3D.add(mesh);
+				},
+				
+				update: function() {
+					Earth.superclass.update.apply(this, arguments);
+					
+					var me = this;
+					var mouse = me.getApp().mouse;
+					
+					me.scale = Math.min(5, me.scale + 0.002);
+					
+					me.earthObj.scale.set(me.scale, me.scale, me.scale);
+					me.earthObj.rotation.y += 0.005;
+					
+					me.cloudsObj.scale.set(me.scale, me.scale, me.scale);
+					me.cloudsObj.rotation.y += 0.008;
+					
+					/*var posX = me.earthObj.position.x + (-mouse.cx - me.earthObj.position.x) * 0.05;
+					
+					me.earthObj.position.x = posX;
+					me.cloudsObj.position.x = posX;*/
+				}
+			});
+			
+			Monster = Ext.extend(Sim.Object, {
+				constructor: function() {
+					Monster.superclass.constructor.apply(this, arguments);
+					
+					var me = this;
+					
+					var loader = new THREE.JSONLoader();
+					var group = new THREE.Object3D();
+					me.setObject3D(group);
+					
+					loader.load(me.url, function() {
+						me.onLoad.apply(me, arguments);
+					});
+				},
+				
+				onLoad: function(geometry, materials) {
+					var me = this;
+					geometry.computeVertexNormals();
+					
+					var mUrl = '../book_gitignore/models/viper/viper.png';
+					var map = THREE.ImageUtils.loadTexture(mUrl);
+					
+					var material = new THREE.MeshPhongMaterial( { map: map } );
+					var mesh = new THREE.Mesh( geometry, material );
+					
+					var scale = 0.3;
+					mesh.doubleSided = true;
+					mesh.scale.set(scale, scale, scale);
+					mesh.position.set(0,-1,0);
+					mesh.rotation.set(0,-Math.PI / 2,0);
+					
+					me.monster = mesh;
+					
+					me.object3D.add(mesh);
+					
+					me.loaded = true;
+					me.startTime = Date.now();
+				},
+				
+				update: function() {
+					Monster.superclass.update.apply(this, arguments);
+					
+					var me = this,
+						app = me.getApp(),
+						mouse = app.mouse,
+						elapsed = app.elapsed; 
+					
+					if(!me.loaded || !mouse) {
+						return;
+					}
+					
+					var obj = me.object3D,
+						monster = me.monster;
+					
+					obj.position.x = obj.position.x + (mouse.cx - obj.position.x) * 0.05;
+					obj.position.y = obj.position.y + (mouse.cy - obj.position.y) * 0.05;
+					obj.rotation.z = obj.rotation.z + (mouse.cx - obj.rotation.z) * 0.05;
+					
+					monster.position.y = Math.sin(elapsed / 800 * Math.PI) * 0.05 - 1; 
+				}
+			});
+			
+			StarsGenerator = Ext.extend(Sim.Object, {
+				constructor: function() {
+					StarsGenerator.superclass.constructor.apply(this, arguments);
+					
+					var me = this;
+					
+					var group = new THREE.Object3D();
+					me.setObject3D(group);
+					
+					var stars = new THREE.Geometry();
+					var m = new THREE.ParticleBasicMaterial({
+						color: 0xffffff,
+						sizeAttenuation: false
+					});
+					me.particleSystem = new THREE.ParticleSystem(stars, m);
+					me.particleSystem.frustrumCulled = true;
+					
+					for(var i = 0; i < 5000; i++) {
+						me.addStar();
+					}
+					
+					me.object3D.add(me.particleSystem);
+				},
+				
+				addStar: function() {
+					var me = this;
+					me.particleSystem.geometry.vertices.push(new THREE.Vector3(
+						Math.random() * 4 - 2,
+						Math.random() * 4 - 2,
+						(Math.random() * 4 - 2) - me.object3D.position.z
+					));
+				},
+				
+				update: function() {
+					StarsGenerator.superclass.update.apply(this, arguments);
+					var me = this;
+					
+					var vertices = me.particleSystem.geometry.vertices;
+					var len = vertices.length;
+					
+					for(var i = 0; i < len; i++) {
+						var v = vertices[i];
+					}
+					
+					me.object3D.position.z = me.object3D.position.z + 0.01;
+					
+					me.addStar();
+				}
+			});
+			
+			MonsterApp = Ext.extend(Sim.App, {
+				constructor: function() {
+					MonsterApp.superclass.constructor.apply(this, arguments);
+					
+					var url = '../book_gitignore/models/monster/monster.js';
+					//url = '../book_gitignore/models/Alien/walkingCycle.js';
+					//url = '../book_gitignore/models/Bench/Bench.js';
+					url = '../book_gitignore/models/viper/viper.js';
+					
+					var me = this;
+					
+					me.setEvents();
+					
+					var monster = new Monster({
+						url: url,
+						scale: 0.33
+					});
+					
+					var earth = new Earth();
+					
+					var light = new THREE.DirectionalLight();
+					light.position.set(0,0,1);
+					
+					var starsGenerator = new StarsGenerator();
+					
+					me.addObject(starsGenerator);
+					me.scene.add(light);
+					me.addObject(earth);
+					me.addObject(monster);
+				},
+				
+				setEvents: function() {
+					var me = this;
+					var w = window.innerWidth;
+					var h = window.innerHeight;
+					me.mouse = {
+						cx: 0,
+						cy: 0
+					}
+					window.onmousemove = function(e) {
+						me.mouse.x = e.pageX;
+						me.mouse.cx = (e.pageX - w / 2) / w * 4;
+						me.mouse.cy = -(e.pageY - h * 3 / 4) / h * 4;
+					}
+				},
+				
+				run: function() {
+					MonsterApp.superclass.run.apply(this, arguments);
+					if(!this.startTime) {
+						this.startTime = Date.now();
+					}
+					this.elapsed = Date.now() - this.startTime;
+				}
+			});
+			Ext.onReady(function() {
+				var monster = new MonsterApp({
+					container: Ext.get('container').dom
+				});
+				monster.run();
+			});
+		</script>
+	</body>
+</html>

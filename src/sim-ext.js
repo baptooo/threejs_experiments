@@ -92,8 +92,10 @@ Sim.App = Ext.extend(Sim.Publisher, {
 		var container = me.container;
 		var canvas = me.canvas;
 		
+		var renderer = me.forceCanvas ? 'CanvasRenderer' : 'WebGLRenderer';
+		
 	    // Create the Three.js renderer, add it to our div
-	    var renderer = new THREE.WebGLRenderer( { antialias: true, canvas: canvas } );
+	    var renderer = new THREE[renderer]( { antialias: true, canvas: canvas } );
 	    renderer.setSize(container.offsetWidth, container.offsetHeight);
 	    container.appendChild( renderer.domElement );
 	
